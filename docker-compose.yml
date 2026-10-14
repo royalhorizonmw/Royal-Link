@@ -1,0 +1,33 @@
+# One-server setup: the app + its PostgreSQL database.
+#   cp .env.example .env   (fill in the values)
+#   docker compose up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: royallink
+      POSTGRES_USER: royallink
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U royallink -d royallink"]
+      interval: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://royallink:${POSTGRES_PASSWORD}@db:5432/royallink
+      SESSION_SECRET: ${SESSION_SECRET}
+      APP_URL: ${APP_URL}
+    ports:
+      - "127.0.0.1:3000:3000" # put Caddy/Nginx in front for HTTPS
+
+volumes:
+  pgdata:
