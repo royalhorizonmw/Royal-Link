@@ -24,6 +24,7 @@ function readVehicle(fd: FormData) {
     capacityTons: fd.get("capacityTons") ? Number(fd.get("capacityTons")) || null : null,
     earningMode: (str(fd.get("earningMode")) ?? (type === "LORRY" ? "BOTH" : "DAILY_TARGET")) as Mode,
     dailyTarget: toInt(fd.get("dailyTarget")),
+    targetPeriod: ((str(fd.get("targetPeriod")) ?? (type === "LORRY" ? "WEEK" : "DAY")) === "WEEK" ? "WEEK" : "DAY") as "DAY" | "WEEK",
     odometer: toInt(fd.get("odometer")),
     purchaseDate: str(fd.get("purchaseDate")),
     purchaseCost: fd.get("purchaseCost") ? toInt(fd.get("purchaseCost")) || null : null,

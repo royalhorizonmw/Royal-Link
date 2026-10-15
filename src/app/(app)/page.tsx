@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { and, eq, gte, inArray, isNull, lte, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { vehicles, dailyRecords, complianceDocs, serviceSchedules, complaints, payrollRuns, haulageJobs, drivers } from "@/db/schema";
+import { vehicles, dailyRecords, complianceDocs, serviceSchedules, complaints, payrollRuns, haulageJobs, drivers, workOrders } from "@/db/schema";
+import { FleetBoard } from "@/components/fleet-board";
+import { KpiIcon } from "@/components/vehicle-art";
 import { requireUser } from "@/lib/auth";
 import { dailySeries, docState, driverBalances, driverScores, scheduleStatus, vehiclePnl } from "@/lib/calc";
 import { expensesByCategory } from "@/lib/calc";
@@ -47,6 +49,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   // Period income includes delivered haulage jobs
   const [jobInc] = await db.select({ v: sql<number>`coalesce(sum(${haulageJobs.rate}),0)::int` }).from(haulageJobs)
     .where(and(gte(haulageJobs.date, pStart), lte(haulageJobs.date, t), inArray(haulageJobs.status, ["DELIVERED", "INVOICED", "PAID"])));
+  const [todayRecs, openWO, jobsOnRoad] = await Promise.all([
+    db.select().from(dailyRecords).where(eq(dailyRecords.date, t)),
+    db.select().from(workOrders).where(inArray(workOrders.status, ["OPEN", "IN_PROGRESS"])),
+    db.select().from(haulageJobs).where(eq(haulageJobs.status, "IN_TRANSIT")),
+  ]);
   const expected = Number(periodAgg[0]?.expected ?? 0);
   const collected = Number(periodAgg[0]?.paid ?? 0);
   const pct = expected ? collected / expected : null;
@@ -83,7 +90,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     if (!v) continue;
     const st = scheduleStatus(sc, v.odometer);
     if (st.state === "OK") continue;
-    alerts.push({ title: `${v.code} ${sc.title} ${st.state === "OVERDUE" ? "overdue" : "due soon"}`, sub: [st.kmLeft != null ? `${st.kmLeft.toLocaleString()} km left` : null, st.daysLeft != null ? `${st.daysLeft} days left` : null].filter(Boolean).join(" · "), tag: "Maintenance", tone: st.state === "OVERDUE" ? "bad" : "warn", href: "/maintenance", rank: st.state === "OVERDUE" ? -5 : 10 });
+    alerts.push({ title: `${v.code} ${sc.title} ${st.state === "OVERDUE" ? "overdue" : "due soon"}`, sub: [st.kmLeft != null ? (st.kmLeft < 0 ? `${(-st.kmLeft).toLocaleString()} km overdue` : `${st.kmLeft.toLocaleString()} km left`) : null, st.daysLeft != null ? (st.daysLeft < 0 ? `${-st.daysLeft} days overdue` : `${st.daysLeft} days left`) : null].filter(Boolean).join(" · "), tag: "Maintenance", tone: st.state === "OVERDUE" ? "bad" : "warn", href: "/maintenance", rank: st.state === "OVERDUE" ? -5 : 10 });
   }
   for (const x of streaks) alerts.push({ title: `${x.d.fullName} short ${x.n} days in a row`, sub: `Owes ${mwk(balances.get(x.d.id) ?? 0)}`, tag: "Targets", tone: "bad", href: `/drivers/${x.d.id}`, rank: -3 });
   if (awaiting.length) alerts.push({ title: `${awaiting.length} excused day${awaiting.length > 1 ? "s" : ""} awaiting approval`, sub: "Approve or reject in the ledger", tag: "Approval", tone: "info", href: `/ledger?date=${awaiting[0].date}`, rank: 0 });
@@ -116,15 +123,21 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
       <section aria-label="Key figures" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Link href={`/ledger`} className="rounded-2xl bg-brand-700 p-5 text-white transition hover:bg-brand-800">
-          <div className="text-[13px] font-medium text-brand-100">Collected vs target · {periodLabel}</div>
-          <div className="num mt-1.5 text-[28px] font-extrabold">{mwk(collected)}</div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="text-[13px] font-medium text-brand-100">Collected vs target · {periodLabel}</div>
+            <KpiIcon name="cash" tone="white" />
+          </div>
+          <div className="num mt-1 text-[24px] font-extrabold leading-tight">{mwk(collected)}</div>
           <div className="num text-[13px] text-brand-100">of {mwk(expected)} expected</div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-brand-500/60"><div className="h-2 rounded-full bg-white" style={{ width: `${Math.min(100, (pct ?? 0) * 100)}%` }} /></div>
           <div className="num mt-2 text-[13px] font-bold">{pct == null ? "No sheet yet" : `${Math.round(pct * 100)}% achieved`}</div>
         </Link>
         <Link href="/vehicles" className="card block p-5 hover:border-brand-300">
-          <div className="text-[13px] font-medium text-muted">Vehicles on the road</div>
-          <div className="num mt-1.5 text-[28px] font-extrabold">{onRoad.length} <span className="text-[18px] font-semibold text-muted">/ {vs.length}</span></div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="text-[13px] font-medium text-muted">Vehicles on the road</div>
+            <KpiIcon name="bus" tone="blue" />
+          </div>
+          <div className="num mt-1 text-[24px] font-extrabold leading-tight">{onRoad.length} <span className="text-[17px] font-semibold text-muted">/ {vs.length}</span></div>
           <div className="mt-3 flex flex-wrap gap-2">
             <Badge tone="good">{onRoad.filter((v) => v.type !== "LORRY").length} buses</Badge>
             <Badge tone="info">{onRoad.filter((v) => v.type === "LORRY").length} lorries</Badge>
@@ -132,16 +145,38 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           </div>
         </Link>
         <Link href="/drivers" className="card block p-5 hover:border-brand-300">
-          <div className="text-[13px] font-medium text-muted">Driver shortfall balance</div>
-          <div className={`num mt-1.5 text-[28px] font-extrabold ${owedTotal ? "text-bad" : "text-good"}`}>{mwk(owedTotal)}</div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="text-[13px] font-medium text-muted">Driver shortfall balance</div>
+            <KpiIcon name="wallet" tone={owedTotal ? "red" : "green"} />
+          </div>
+          <div className={`num mt-1 text-[24px] font-extrabold leading-tight ${owedTotal ? "text-bad" : "text-good"}`}>{mwk(owedTotal)}</div>
           <div className="text-[13px] text-muted">{owingDrivers ? `Owed by ${owingDrivers} driver${owingDrivers > 1 ? "s" : ""}` : "Nobody owes"}</div>
         </Link>
         <Link href={user.role === "OPERATIONS" ? "/vehicles" : "/reports"} className="card block p-5 hover:border-brand-300">
-          <div className="text-[13px] font-medium text-muted">Net profit · {periodLabel}</div>
-          <div className={`num mt-1.5 text-[28px] font-extrabold ${periodProfit >= 0 ? "text-good" : "text-bad"}`}>{mwk(periodProfit)}</div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="text-[13px] font-medium text-muted">Net profit · {periodLabel}</div>
+            <KpiIcon name="trend" tone={periodProfit >= 0 ? "green" : "red"} />
+          </div>
+          <div className={`num mt-1 text-[24px] font-extrabold leading-tight ${periodProfit >= 0 ? "text-good" : "text-bad"}`}>{mwk(periodProfit)}</div>
           <div className="text-[13px] text-muted">Income {mwk(collected + Number(jobInc?.v ?? 0))} · costs {mwk(periodCost)}</div>
         </Link>
       </section>
+
+      <FleetBoard
+        vehicles={vs.map((v) => {
+          const rec = todayRecs.find((r) => r.vehicleId === v.id);
+          const drv = ds.find((d) => d.vehicleId === v.id);
+          const wo = openWO.find((w) => w.vehicleId === v.id);
+          const job = jobsOnRoad.find((j) => j.vehicleId === v.id);
+          return {
+            id: v.id, code: v.code, reg: v.regNumber, type: v.type, status: v.status,
+            driver: drv?.fullName ?? null,
+            today: rec ? { status: rec.status, paid: rec.amountPaid, target: rec.target } : null,
+            garageJob: wo ? { title: wo.title, since: wo.openedAt } : null,
+            trip: job ? `${job.origin} → ${job.destination}` : null,
+          };
+        })}
+      />
 
       <section className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
         <Card title="Collected vs target · last 14 days" action={<Link href="/ledger" className="text-[13px] font-bold text-brand-700">Open ledger</Link>}>

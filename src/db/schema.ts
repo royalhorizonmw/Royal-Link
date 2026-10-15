@@ -69,7 +69,10 @@ export const vehicles = pgTable("vehicles", {
   seats: integer("seats"),
   capacityTons: real("capacity_tons"),
   earningMode: earningModeEnum("earning_mode").default("DAILY_TARGET").notNull(),
+  /** Target amount per period (see targetPeriod). Column name kept for compatibility. */
   dailyTarget: integer("daily_target").default(0).notNull(),
+  /** DAY = target due every day (buses); WEEK = one target per Monday–Sunday week (lorries). */
+  targetPeriod: text("target_period").$type<"DAY" | "WEEK">().default("DAY").notNull(),
   status: vehicleStatusEnum("status").default("ACTIVE").notNull(),
   odometer: integer("odometer").default(0).notNull(),
   purchaseDate: date("purchase_date"),

@@ -26,7 +26,7 @@ export default async function BudgetsPage({ searchParams }: { searchParams: Prom
   ]);
   // Suggested income target: daily targets × working days (less rest days)
   const workDays = Math.round(days * (1 - s.restDaysPerWeek / 7));
-  const suggested = vs.filter((v) => v.earningMode !== "PER_JOB").reduce((a, v) => a + v.dailyTarget * workDays, 0);
+  const suggested = vs.filter((v) => v.earningMode !== "PER_JOB").reduce((a, v) => a + (v.targetPeriod === "WEEK" ? Math.round((v.dailyTarget * days) / 7) : v.dailyTarget * workDays), 0);
   const incomeTarget = inc?.amount ?? 0;
   const actualIncome = [...incomeMap.values()].reduce((a, x) => a + x.target + x.jobs, 0);
   const budgetTotal = rows.reduce((a, r) => a + r.amount, 0);

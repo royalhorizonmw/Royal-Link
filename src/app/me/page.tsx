@@ -5,7 +5,7 @@ import { dailyRecords, drivers, vehicles, payslips, payrollRuns, staff, complain
 import { requireUser, logActivity } from "@/lib/auth";
 import { driverBalances, driverScores } from "@/lib/calc";
 import { getSettings } from "@/lib/settings";
-import { fmtDate, fmtMonth, label, monthRange, mwk, str, thisMonth, today } from "@/lib/format";
+import { fmtDate, fmtMonth, label, monthRange, mwk, str, thisMonth, today, weekStart } from "@/lib/format";
 import { Badge, statusTone } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import { changeOwnPassword } from "../(app)/settings/actions";
@@ -45,7 +45,7 @@ export default async function MePage({ searchParams }: { searchParams: Promise<{
   const d = await db.query.drivers.findFirst({ where: eq(drivers.id, me.driverId) });
   const [v, todayRec, days, balances, scores, myStaff, s] = await Promise.all([
     d?.vehicleId ? db.query.vehicles.findFirst({ where: eq(vehicles.id, d.vehicleId) }) : Promise.resolve(undefined),
-    d?.vehicleId ? db.query.dailyRecords.findFirst({ where: and(eq(dailyRecords.vehicleId, d.vehicleId), eq(dailyRecords.date, t)) }) : Promise.resolve(undefined),
+    d?.vehicleId ? db.query.dailyRecords.findFirst({ where: and(eq(dailyRecords.vehicleId, d.vehicleId), inArray(dailyRecords.date, [t, weekStart(t)])), orderBy: desc(dailyRecords.date) }) : Promise.resolve(undefined),
     db.select().from(dailyRecords).where(eq(dailyRecords.driverId, me.driverId)).orderBy(desc(dailyRecords.date)).limit(10),
     driverBalances([me.driverId]),
     driverScores(start, end),
@@ -76,13 +76,13 @@ export default async function MePage({ searchParams }: { searchParams: Promise<{
 
         <section className="rounded-[20px] bg-brand-700 p-5 text-white">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] text-brand-100">Today&apos;s target</span>
+            <span className="text-[13px] text-brand-100">{v?.targetPeriod === "WEEK" ? "This week's target (Mon–Sun)" : "Today's target"}</span>
             <span className={`rounded-full px-2.5 py-0.5 text-[12px] font-bold ${status === "PAID" ? "bg-good-bg text-good" : status === "SHORT" ? "bg-bad-bg text-bad" : status === "EXCUSED" || status === "REST_DAY" ? "bg-info-bg text-info" : "bg-warn-bg text-warn"}`}>
               {status ? (status === "PENDING" ? "Not yet paid" : label(status)) : v ? "Sheet not opened yet" : "No vehicle assigned"}
             </span>
           </div>
           <div className="num mt-2 text-[34px] font-extrabold">{mwk(todayRec?.target ?? v?.dailyTarget ?? 0)}</div>
-          {todayRec?.amountPaid ? <div className="num text-[14px] text-brand-100">Paid today: {mwk(todayRec.amountPaid)}</div> : null}
+          {todayRec?.amountPaid ? <div className="num text-[14px] text-brand-100">{v?.targetPeriod === "WEEK" ? `Paid so far: ${mwk(todayRec.amountPaid)} · ${mwk(Math.max(0, todayRec.target - todayRec.amountPaid))} to go` : `Paid today: ${mwk(todayRec.amountPaid)}`}</div> : null}
           <p className="mt-3 rounded-xl bg-brand-800/60 p-3 text-[13px] leading-snug text-brand-50">{s.paymentInstructions}{v ? ` Reference: ${v.code}.` : ""}</p>
         </section>
 

@@ -29,6 +29,13 @@
       "when": 1792092383874,
       "tag": "0003_bus_maintenance_plan",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792093695980,
+      "tag": "0004_weekly_targets",
+      "breakpoints": true
     }
   ]
 }

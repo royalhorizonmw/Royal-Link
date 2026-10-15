@@ -29,6 +29,16 @@ export function addDays(iso: string, days: number) {
   return d.toISOString().slice(0, 10);
 }
 
+/** Monday of the week containing the given date (weeks run Monday–Sunday). */
+export function weekStart(iso: string) {
+  const dow = new Date(iso + "T12:00:00Z").getUTCDay(); // 0 = Sunday
+  return addDays(iso, dow === 0 ? -6 : 1 - dow);
+}
+
+export function periodLabel(p: string | null | undefined) {
+  return p === "WEEK" ? "per week" : "per day";
+}
+
 export function daysBetween(fromIso: string, toIso: string) {
   return Math.round((Date.parse(toIso + "T00:00:00Z") - Date.parse(fromIso + "T00:00:00Z")) / 86_400_000);
 }
@@ -60,7 +70,7 @@ export function label(s: string | null | undefined) {
   const special: Record<string, string> = {
     COF: "Certificate of Fitness", COF_LICENCE: "COF & licences", PSV_LICENCE: "PSV licence",
     AIRTEL_MONEY: "Airtel Money", TNM_MPAMBA: "TNM Mpamba", REST_DAY: "Rest day", PER_JOB: "Per job",
-    DAILY_TARGET: "Daily target", BOTH: "Target + jobs", REPAIRS_PARTS: "Repairs & parts",
+    DAILY_TARGET: "Target", BOTH: "Target + jobs", REPAIRS_PARTS: "Repairs & parts",
     OFFICE_ADMIN: "Office & admin", TOLLS_LEVIES: "Tolls & levies", LOAN_LEASE: "Loan / lease",
     STARTER_FUEL: "Starter fuel", DRIVER_ALLOWANCE: "Driver allowance", IN_GARAGE: "In garage",
     IN_TRANSIT: "In transit", IN_PROGRESS: "In progress",

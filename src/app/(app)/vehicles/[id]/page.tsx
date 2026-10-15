@@ -6,7 +6,7 @@ import { vehicles, drivers, dailyRecords, expenses, complianceDocs, serviceSched
 import { requireRole } from "@/lib/auth";
 import { docState, scheduleStatus, vehiclePnl } from "@/lib/calc";
 import { getSettings } from "@/lib/settings";
-import { fmtDate, label, monthRange, mwk, thisMonth } from "@/lib/format";
+import { fmtDate, label, monthRange, mwk, thisMonth, periodLabel } from "@/lib/format";
 import { AddPanel, Badge, Bar, Card, Empty, Notice, PageHeader, Stat, TableWrap, statusTone } from "@/components/ui";
 import { VehicleForm } from "@/components/vehicle-form";
 import { setVehicleStatus, updateOdometer, updateVehicle } from "../actions";
@@ -54,7 +54,7 @@ export default async function VehiclePage({ params, searchParams }: { params: Pr
         <Stat label="Income this month" value={mwk(p?.income)} note={p?.jobIncome ? `${mwk(p.jobIncome)} from jobs` : undefined} />
         <Stat label="Costs this month" value={mwk(p?.cost)} />
         <Stat label="Profit this month" value={mwk(p?.profit)} tone={(p?.profit ?? 0) >= 0 ? "good" : "bad"} />
-        <Stat label="Target hit" value={p?.hit == null ? "—" : `${Math.round(p.hit * 100)}%`} note={`Daily target ${mwk(v.dailyTarget)}`} />
+        <Stat label="Target hit" value={p?.hit == null ? "—" : `${Math.round(p.hit * 100)}%`} note={`Target ${mwk(v.dailyTarget)} ${periodLabel(v.targetPeriod)}`} />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-2">

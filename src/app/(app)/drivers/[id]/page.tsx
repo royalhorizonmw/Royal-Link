@@ -5,7 +5,7 @@ import { db } from "@/db";
 import { drivers, vehicles, dailyRecords, driverAdjustments, complaints, users, assignments } from "@/db/schema";
 import { requireRole } from "@/lib/auth";
 import { driverBalances, driverScores } from "@/lib/calc";
-import { fmtDate, label, monthRange, mwk, thisMonth, today } from "@/lib/format";
+import { fmtDate, label, monthRange, mwk, thisMonth, today, periodLabel } from "@/lib/format";
 import { AddPanel, Badge, Card, Empty, Field, Notice, PageHeader, Stat, TableWrap, statusTone } from "@/components/ui";
 import { assignVehicle, createDriverLogin, recordAdjustment, updateDriver } from "../actions";
 
@@ -51,7 +51,7 @@ export default async function DriverPage({ params, searchParams }: { params: Pro
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Balance owed" value={bal > 0 ? mwk(bal) : "Nothing owed"} tone={bal > 0 ? "bad" : "good"} />
         <Stat label="Score this month" value={sc ? `${sc.score.total} / 100` : "—"} note={sc ? `Grade ${sc.score.grade} · targets ${sc.score.target}/60 · complaints ${sc.score.complaints}/25 · licences ${sc.score.documents}/15` : undefined} tone="brand" />
-        <Stat label="Vehicle" value={v ? v.code : "—"} note={v ? `${v.regNumber} · target ${mwk(v.dailyTarget)}` : "Not assigned"} />
+        <Stat label="Vehicle" value={v ? v.code : "—"} note={v ? `${v.regNumber} · target ${mwk(v.dailyTarget)} ${periodLabel(v.targetPeriod)}` : "Not assigned"} />
         <Stat label="Status" value={<Badge tone={statusTone(d.status)}>{label(d.status)}</Badge>} note={d.starterFuelGiven ? "Starter fuel given" : undefined} />
       </div>
 

@@ -2,7 +2,7 @@ import { Field } from "./ui";
 
 type V = {
   code?: string; regNumber?: string; type?: string; make?: string | null; model?: string | null; year?: number | null;
-  seats?: number | null; capacityTons?: number | null; earningMode?: string; dailyTarget?: number; odometer?: number;
+  seats?: number | null; capacityTons?: number | null; earningMode?: string; dailyTarget?: number; targetPeriod?: string; odometer?: number;
   purchaseDate?: string | null; purchaseCost?: number | null; notes?: string | null; status?: string;
 };
 
@@ -20,12 +20,19 @@ export function VehicleForm({ action, v = {}, submit, withStatus = false }: {
       </Field>
       <Field label="How it earns">
         <select className="input" name="earningMode" defaultValue={v.earningMode ?? "DAILY_TARGET"}>
-          <option value="DAILY_TARGET">Daily target</option>
+          <option value="DAILY_TARGET">Target (daily or weekly)</option>
           <option value="PER_JOB">Per haulage job</option>
-          <option value="BOTH">Daily target + jobs</option>
+          <option value="BOTH">Target + haulage jobs</option>
         </select>
       </Field>
-      <Field label="Daily target (MWK)"><input className="input num" name="dailyTarget" inputMode="numeric" defaultValue={v.dailyTarget ?? ""} /></Field>
+      <Field label="Target (MWK)"><input className="input num" name="dailyTarget" inputMode="numeric" defaultValue={v.dailyTarget ?? ""} /></Field>
+      <Field label="Target is" hint="Buses usually daily, lorries weekly">
+        <select className="input" name="targetPeriod" defaultValue={v.targetPeriod ?? ""}>
+          <option value="">Automatic (bus daily, lorry weekly)</option>
+          <option value="DAY">Per day</option>
+          <option value="WEEK">Per week (Mon–Sun)</option>
+        </select>
+      </Field>
       <Field label="Odometer (km)"><input className="input num" name="odometer" inputMode="numeric" defaultValue={v.odometer ?? ""} /></Field>
       <Field label="Make"><input className="input" name="make" defaultValue={v.make ?? ""} /></Field>
       <Field label="Model"><input className="input" name="model" defaultValue={v.model ?? ""} /></Field>

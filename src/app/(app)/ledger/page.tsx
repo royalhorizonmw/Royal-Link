@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { and, eq, gte, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { dailyRecords, vehicles, drivers } from "@/db/schema";
 import { requireRole } from "@/lib/auth";
 import { driverBalances, shortfallAgeing } from "@/lib/calc";
 import { getSettings } from "@/lib/settings";
-import { addDays, fmtDate, label, mwk, today } from "@/lib/format";
+import { addDays, fmtDate, label, mwk, today, weekStart } from "@/lib/format";
 import { Badge, Card, Empty, Notice, PageHeader, Stat, TableWrap, statusTone } from "@/components/ui";
 import { approveExcuse, closeDay, markRestDay, openDay, recordPayment, rejectExcuse, reopenRecord, requestExcuse } from "./actions";
 
@@ -25,7 +25,11 @@ export default async function LedgerPage({ searchParams }: { searchParams: Promi
     .from(dailyRecords)
     .innerJoin(vehicles, eq(vehicles.id, dailyRecords.vehicleId))
     .leftJoin(drivers, eq(drivers.id, dailyRecords.driverId))
-    .where(eq(dailyRecords.date, date))
+    // Daily vehicles: today's row. Weekly vehicles (lorries): the row for this Monday–Sunday week.
+    .where(or(
+      and(eq(dailyRecords.date, date), eq(vehicles.targetPeriod, "DAY")),
+      and(eq(dailyRecords.date, weekStart(date)), eq(vehicles.targetPeriod, "WEEK")),
+    ))
     .orderBy(vehicles.code);
 
   const driverIds = rows.map((x) => x.d?.id).filter(Boolean) as string[];
@@ -125,7 +129,8 @@ export default async function LedgerPage({ searchParams }: { searchParams: Promi
                   return (
                     <tr key={r.id}>
                       <td>
-                        <div className="flex items-baseline gap-2"><Link href={`/vehicles/${v.id}`} className="font-bold text-brand-700">{v.code}</Link><span className="num text-[12px] text-muted">target {r.target.toLocaleString()}</span></div>
+                        <div className="flex items-baseline gap-2"><Link href={`/vehicles/${v.id}`} className="font-bold text-brand-700">{v.code}</Link><span className="num text-[12px] text-muted">target {r.target.toLocaleString()}{v.targetPeriod === "WEEK" ? " / week" : ""}</span></div>
+                        {v.targetPeriod === "WEEK" ? <div className="text-[11px] font-semibold text-info">Week {fmtDate(r.date, { day: "numeric", month: "short" })} – {fmtDate(addDays(r.date, 6), { day: "numeric", month: "short" })}</div> : null}
                         {d ? <Link href={`/drivers/${d.id}`} className="text-[13px] text-ink hover:text-brand-700">{d.fullName}</Link> : <span className="text-[13px] text-muted">No driver</span>}
                         {st >= settings.shortStreakAlert ? <div className="text-[12px] font-semibold text-bad">{st} short days in a row</div> : null}
                       </td>
@@ -136,7 +141,7 @@ export default async function LedgerPage({ searchParams }: { searchParams: Promi
                           <form action={recordPayment.bind(null, r.id, date)} className="flex items-center gap-2">
                             <label className="sr-only" htmlFor={`a-${r.id}`}>Amount for {v.code}</label>
                             <input id={`a-${r.id}`} className="input num !min-h-[36px] !w-[104px] !px-2.5 !py-1.5" name="amount" inputMode="numeric"
-                              defaultValue={r.status === "PENDING" ? r.target : r.amountPaid} />
+                              defaultValue={r.status === "PENDING" && !(v.targetPeriod === "WEEK" && r.amountPaid) ? r.target : r.amountPaid} />
                             <label className="sr-only" htmlFor={`m-${r.id}`}>Method</label>
                             <select id={`m-${r.id}`} className="input !min-h-[36px] !w-[118px] !px-2 !py-1.5" name="method" defaultValue={r.method ?? "AIRTEL_MONEY"}>
                               <option value="AIRTEL_MONEY">Airtel</option><option value="TNM_MPAMBA">Mpamba</option><option value="CASH">Cash</option><option value="BANK">Bank</option>
@@ -151,6 +156,7 @@ export default async function LedgerPage({ searchParams }: { searchParams: Promi
                         <Badge tone={r.status === "EXCUSED" && !r.approvedById ? "warn" : statusTone(r.status)}>
                           {r.status === "EXCUSED" && !r.approvedById ? "Excuse awaiting approval" : label(r.status)}
                         </Badge>
+                        {v.targetPeriod === "WEEK" && r.status === "PENDING" && r.amountPaid ? <div className="num mt-1 text-[12px] font-semibold text-info">{r.amountPaid.toLocaleString()} paid so far · {(r.target - r.amountPaid).toLocaleString()} to go</div> : null}
                         {r.status === "SHORT" ? <div className="num mt-1 text-[12px] font-semibold text-bad">−{(r.target - r.amountPaid).toLocaleString()} today</div> : null}
                         {bal > 0 ? <div className="num mt-0.5 text-[12px] text-muted">Owes {bal.toLocaleString()} total</div> : null}
                       </td>
@@ -203,6 +209,7 @@ export default async function LedgerPage({ searchParams }: { searchParams: Promi
         </Card>
         <Card title="Target rules">
           <ul className="list-disc space-y-1.5 pl-5 text-[14px] text-slate-700">
+            <li>Buses have a daily target. Lorries have a weekly target (Monday–Sunday) that can be paid in instalments; it only counts as short if unpaid when the week ends.</li>
             <li>Vehicle in the garage: its row is excused automatically, so no shortfall.</li>
             <li>Excused days need a reason. Operations and Finance send them to the manager to approve.</li>
             <li>Up to {settings.restDaysPerWeek} rest day per driver per week.</li>

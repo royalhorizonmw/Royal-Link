@@ -27,7 +27,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
         {pnl.length === 0 ? <Empty title="No vehicles yet">Add your first bus or lorry above.</Empty> : (
           <TableWrap>
             <table className="data">
-              <thead><tr><th>Vehicle</th><th>Reg.</th><th>Type</th><th>Earns by</th><th>Daily target</th><th>Driver</th><th>Status</th><th>Income</th><th>Costs</th><th>Profit</th><th>Target hit</th></tr></thead>
+              <thead><tr><th>Vehicle</th><th>Reg.</th><th>Type</th><th>Earns by</th><th>Target</th><th>Driver</th><th>Status</th><th>Income</th><th>Costs</th><th>Profit</th><th>Target hit</th></tr></thead>
               <tbody>
                 {pnl.map(({ vehicle: v, income, cost, profit, hit }) => {
                   const drv = ds.find((d) => d.vehicleId === v.id && d.status === "ACTIVE");
@@ -37,7 +37,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
                       <td>{v.regNumber}</td>
                       <td className="text-muted">{label(v.type)}</td>
                       <td>{label(v.earningMode)}</td>
-                      <td className="num">{v.earningMode === "PER_JOB" ? "—" : mwk(v.dailyTarget)}</td>
+                      <td className="num">{v.earningMode === "PER_JOB" ? "—" : <>{mwk(v.dailyTarget)}<span className="text-[11px] text-muted"> /{v.targetPeriod === "WEEK" ? "week" : "day"}</span></>}</td>
                       <td>{drv ? <Link href={`/drivers/${drv.id}`} className="text-brand-700">{drv.fullName}</Link> : <span className="text-muted">Unassigned</span>}</td>
                       <td><Badge tone={statusTone(v.status)}>{label(v.status)}</Badge></td>
                       <td className="num">{mwk(income)}</td>

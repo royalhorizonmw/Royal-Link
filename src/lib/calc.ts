@@ -162,7 +162,9 @@ export async function dailySeries(start: string, end: string) {
       paid: sql<number>`coalesce(sum(${dailyRecords.amountPaid}),0)::int`,
     })
     .from(dailyRecords)
-    .where(and(gte(dailyRecords.date, start), lte(dailyRecords.date, end)))
+    .innerJoin(vehicles, eq(vehicles.id, dailyRecords.vehicleId))
+    // Weekly targets (lorries) would make Mondays look huge, so this daily view shows daily-target vehicles only
+    .where(and(gte(dailyRecords.date, start), lte(dailyRecords.date, end), eq(vehicles.targetPeriod, "DAY")))
     .groupBy(dailyRecords.date)
     .orderBy(dailyRecords.date);
   const byDate = new Map(rows.map((r) => [r.date, r]));
