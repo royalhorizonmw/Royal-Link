@@ -199,7 +199,8 @@ export async function driverScores(start: string, end: string) {
   const comp = await db
     .select({ driverId: complaints.driverId, severity: complaints.severity, n: sql<number>`count(*)::int` })
     .from(complaints)
-    .where(and(gte(complaints.date, start), lte(complaints.date, end)))
+    // Compliments are logged through the same form but never count against the driver
+    .where(and(gte(complaints.date, start), lte(complaints.date, end), sql`${complaints.description} not ilike 'Compliment%'`))
     .groupBy(complaints.driverId, complaints.severity);
   const docs = await db
     .select({ driverId: complianceDocs.driverId, expiry: complianceDocs.expiryDate })

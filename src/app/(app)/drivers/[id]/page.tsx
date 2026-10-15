@@ -12,7 +12,7 @@ import { assignVehicle, createDriverLogin, recordAdjustment, updateDriver } from
 const ERRORS: Record<string, string> = {
   waiver: "Only a manager can write off (waive) a balance.",
   amount: "Enter an amount above zero.",
-  login: "Enter an email and a password of at least 8 characters.",
+  login: "Enter a valid email. A typed password needs at least 8 characters.",
   email: "That email already has an account.",
 };
 
@@ -41,7 +41,11 @@ export default async function DriverPage({ params, searchParams }: { params: Pro
   return (
     <>
       <PageHeader title={d.fullName} subtitle={<><Link href="/drivers" className="text-brand-700">Drivers</Link> · {d.phone} · started {fmtDate(d.startDate)}</>} />
-      {sp.saved ? <Notice tone="good">{sp.saved === "login" ? "Driver login created. Share the email and password with the driver." : "Saved."}</Notice> : null}
+      {sp.saved ? <Notice tone={sp.saved === "login-nomail" ? "warn" : "good"}>{
+        sp.saved === "login" ? "Driver login created with the temporary password you typed. Give it to the driver in person; they must choose their own at first sign-in."
+        : sp.saved === "login-emailed" ? "Driver login created and their personal temporary password was emailed to them."
+        : sp.saved === "login-nomail" ? "Driver login created, but the email could not be sent (email not connected yet). Use Settings → Users → Set manually to give a temporary password in person."
+        : "Saved."}</Notice> : null}
       {sp.error ? <Notice tone="bad">{ERRORS[sp.error] ?? "Something went wrong."}</Notice> : null}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -121,8 +125,8 @@ export default async function DriverPage({ params, searchParams }: { params: Pro
             <p className="text-[14px]">This driver signs in as <span className="font-semibold">{login.email}</span> to see their target, balance, score and payslips.</p>
           ) : canOps ? (
             <form action={createDriverLogin.bind(null, id)} className="grid gap-3 sm:grid-cols-2">
-              <Field label="Email (or phone@royallink)"><input className="input" name="email" type="email" required /></Field>
-              <Field label="Temporary password"><input className="input" name="password" type="text" minLength={8} required /></Field>
+              <Field label="Driver's email"><input className="input" name="email" type="email" required /></Field>
+              <Field label="Temporary password (optional)" hint="Leave blank to email the driver their own"><input className="input" name="password" type="text" minLength={8} /></Field>
               <div className="sm:col-span-2"><button className="btn btn-primary">Create login</button></div>
             </form>
           ) : <p className="text-[14px] text-muted">No login yet.</p>}

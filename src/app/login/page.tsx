@@ -16,7 +16,9 @@ async function login(formData: FormData) {
   const ok = user && user.active && (await bcrypt.compare(password, user.passwordHash));
   if (!ok) redirect(`/login?error=1${next ? `&next=${encodeURIComponent(next)}` : ""}`);
   await createSession({ userId: user.id, role: user.role, name: user.name });
+  await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
   await logActivity(user.id, "login");
+  if (user.mustChangePassword) redirect("/welcome");
   if (user.role === "DRIVER") redirect("/me");
   redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/");
 }

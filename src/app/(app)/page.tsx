@@ -144,8 +144,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
-        <Card title="Collected vs expected · last 14 days" action={<span className="text-[12px] text-muted">Bars: collected · dashed: expected</span>}>
-          <DailyChart data={chartData} />
+        <Card title="Collected vs target · last 14 days" action={<Link href="/ledger" className="text-[13px] font-bold text-brand-700">Open ledger</Link>}>
+          {chartData.some((d) => d.paid > 0 || d.expected > 0) ? <DailyChart data={chartData} /> : (
+            <Empty title="No collections recorded yet">Open the day&apos;s sheet in Daily targets and record payments. This chart fills in as days are recorded.</Empty>
+          )}
         </Card>
         <Card title="Needs attention" pad={false} action={<Badge tone={alerts.length ? "bad" : "good"}>{alerts.length ? `${alerts.length} open` : "All clear"}</Badge>}>
           {alerts.length === 0 ? <Empty title="Nothing needs attention" /> : (
@@ -168,7 +170,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <Card title="Profit by vehicle · this month" pad={false} action={<Link href="/vehicles" className="text-[13px] font-bold text-brand-700">Fleet</Link>}>
           {pnl.length === 0 ? <Empty title="No vehicles yet" /> : (
             <>
-              <div className="px-3"><VehicleBars data={pnl.map((r) => ({ label: r.vehicle.code, value: r.profit }))} /></div>
+              {pnl.some((r) => r.income || r.cost) ? (
+                <div className="px-3"><VehicleBars data={pnl.map((r) => ({ label: r.vehicle.code, value: r.profit }))} /></div>
+              ) : <div className="px-5 pb-3 text-[13px] text-muted">The chart appears once income or costs are recorded this month.</div>}
               <TableWrap><table className="data">
                 <thead><tr><th>Vehicle</th><th>Income</th><th>Costs</th><th>Profit</th><th>Target hit</th></tr></thead>
                 <tbody>{pnl.map((r) => (

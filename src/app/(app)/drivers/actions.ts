@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { drivers, assignments, expenses, driverAdjustments, users, vehicles, complianceDocs } from "@/db/schema";
 import { requireRole, logActivity } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
+import { sendWelcome, tempPassword } from "@/lib/invite";
 import { str, toInt, today } from "@/lib/format";
 
 function readDriver(fd: FormData) {
@@ -108,10 +109,18 @@ export async function createDriverLogin(driverId: string, fd: FormData) {
   if (!d) redirect("/drivers");
   const email = (str(fd.get("email")) ?? "").toLowerCase();
   const password = String(fd.get("password") ?? "");
-  if (!email || password.length < 8) redirect(`/drivers/${driverId}?error=login`);
+  // Blank password = email the driver their own temporary password.
+  if (!email || !email.includes("@") || (password && password.length < 8)) redirect(`/drivers/${driverId}?error=login`);
   const exists = await db.query.users.findFirst({ where: eq(users.email, email) });
   if (exists) redirect(`/drivers/${driverId}?error=email`);
-  await db.insert(users).values({ name: d.fullName, email, passwordHash: await bcrypt.hash(password, 10), role: "DRIVER", driverId });
+  const [u] = await db.insert(users).values({
+    name: d.fullName, email, role: "DRIVER", driverId, mustChangePassword: true,
+    passwordHash: await bcrypt.hash(password || tempPassword() + tempPassword(), 10),
+  }).returning();
   await logActivity(user.id, "driver.login.create", email);
+  if (!password) {
+    const r = await sendWelcome(u.id);
+    redirect(`/drivers/${driverId}?saved=${r.ok ? "login-emailed" : "login-nomail"}`);
+  }
   redirect(`/drivers/${driverId}?saved=login`);
 }

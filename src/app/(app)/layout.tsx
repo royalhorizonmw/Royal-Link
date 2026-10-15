@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
+  if (user.mustChangePassword) redirect("/welcome");
   if (user.role === "DRIVER") redirect("/me");
   const items = NAV.filter((n) => user.role === "MANAGER" || n.roles.includes(user.role)).map(({ href, label, icon }) => ({ href, label, icon }));
   return (

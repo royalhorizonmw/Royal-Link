@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { decrypt, SESSION_COOKIE } from "@/lib/session";
 
-const PUBLIC_PATHS = ["/login", "/report", "/setup"];
+const PUBLIC_PATHS = ["/login", "/report", "/setup", "/api/cron"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -14,7 +14,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
   // Drivers only see their own portal (and the public pages).
-  if (session?.role === "DRIVER" && !isPublic && !pathname.startsWith("/me") && pathname !== "/logout") {
+  if (session?.role === "DRIVER" && !isPublic && !pathname.startsWith("/me") && pathname !== "/logout" && pathname !== "/welcome") {
     return NextResponse.redirect(new URL("/me", req.url));
   }
   return NextResponse.next();

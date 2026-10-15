@@ -3,7 +3,7 @@ import { requireRole } from "@/lib/auth";
 import { driverScores, vehiclePnl } from "@/lib/calc";
 import { companyPnl, trend } from "@/lib/reports";
 import { fmtMonth, label, monthRange, mwk, thisMonth } from "@/lib/format";
-import { Bar, Card, PageHeader, Stat, TableWrap } from "@/components/ui";
+import { Bar, Card, Empty, PageHeader, Stat, TableWrap } from "@/components/ui";
 import { MonthPicker } from "@/components/month-picker";
 import { PrintButton } from "@/components/print-button";
 import { Icon } from "@/components/icons";
@@ -18,6 +18,9 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const { start, end } = monthRange(month);
   const [pnl, vp, scores, tr] = await Promise.all([companyPnl(month), vehiclePnl(start, end), driverScores(start, end), trend(month)]);
   const margin = pnl.income ? pnl.profit / pnl.income : null;
+  // Skip the empty months before the system was in use
+  const firstUsed = tr.findIndex((m) => m.income || m.cost);
+  const trShown = firstUsed === -1 ? tr.slice(-1) : tr.slice(firstUsed);
   const exp = (type: string) => `/reports/export?type=${type}&month=${month}`;
 
   return (
@@ -32,7 +35,11 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <Stat label="Profit margin" value={margin == null ? "—" : `${Math.round(margin * 100)}%`} />
       </div>
 
-      <Card title="Last 6 months"><TrendChart data={tr} /></Card>
+      <Card title={trShown.length > 1 ? `Last ${trShown.length} months` : "This month"}>
+        {trShown.some((m) => m.income || m.cost) ? <TrendChart data={trShown} /> : (
+          <Empty title="No income or costs recorded yet">The trend fills in month by month as the ledger, jobs and expenses are used.</Empty>
+        )}
+      </Card>
 
       <div className="grid gap-5 xl:grid-cols-[380px_1fr]">
         <Card title="Profit & loss" action={<a className="text-[13px] font-bold text-brand-700" href={exp("pnl")}><Icon name="download" size={14} className="mr-1 inline" />CSV</a>}>

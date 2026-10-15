@@ -37,6 +37,7 @@ async function reportProblem(fd: FormData) {
 export default async function MePage({ searchParams }: { searchParams: Promise<{ sent?: string; saved?: string; error?: string }> }) {
   const me = await requireUser();
   if (me.role !== "DRIVER") redirect("/");
+  if (me.mustChangePassword) redirect("/welcome");
   const sp = await searchParams;
   if (!me.driverId) return <main className="p-6">Your account is not linked to a driver profile. Ask Operations to link it.</main>;
   const t = today();

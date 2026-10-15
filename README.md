@@ -79,6 +79,24 @@ Copy backups off the server too (e.g. to Google Drive with rclone).
 7. **Settings → Domains** → add `transport.royalhorizonmw.com`. At the DNS provider for royalhorizonmw.com add a **CNAME** record: name `transport`, value `cname.vercel-dns.com`. HTTPS is automatic.
 8. Neon keeps point-in-time backups; also export a monthly copy (Neon console → Backup) for safety.
 
+## Email reminders and login invitations
+
+Royal Link emails people through **Resend** (resend.com; the free plan covers 100 emails a day).
+
+- **Daily reminders** go out at **06:00 Malawi time** (Vercel Cron → `/api/cron/reminders`, see `vercel.json`). Each person gets only what concerns their role: Manager summary, Operations tasks, Finance money items, and each driver's own licence and target issues. Managers can switch reminders on/off per person, send a test, or send immediately from **Settings & users**.
+- **Login invitations**: adding a user (or a driver login with the password left blank) emails that person **their own random temporary password**. At first sign-in they must choose their own; easy passwords such as `1234567890` are refused. "Email login details to N who haven't signed in" re-sends to everyone still pending.
+- Every email is listed under **Settings → Emails sent** (sent / failed / skipped).
+
+Environment variables (Vercel → Settings → Environment Variables):
+
+| Key | Value |
+|---|---|
+| `RESEND_API_KEY` | API key from resend.com → API Keys |
+| `EMAIL_FROM` | `Royal Link <noreply@royalhorizonmw.com>` (after verifying the domain in Resend) |
+| `CRON_SECRET` | any long random text; Vercel uses it to call the reminder job |
+
+To send from `@royalhorizonmw.com`, add the domain in Resend → Domains and copy the DNS records it shows into Spaceship → Advanced DNS. Until then, leave `EMAIL_FROM` unset; Resend's test sender only delivers to your own Resend account email.
+
 ## Local development
 ```bash
 npm install

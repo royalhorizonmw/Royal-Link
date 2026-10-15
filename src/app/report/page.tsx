@@ -34,6 +34,8 @@ async function submit(fd: FormData) {
     vehicleId: v?.id ?? null, driverId: d?.id ?? null,
     description: `${topic}: ${message}`.slice(0, 2000),
     contactName: str(fd.get("name")), contactPhone: str(fd.get("phone")),
+    // Compliments are recorded (they count for nothing against the driver) but need no action
+    ...(topic === "Compliment" ? { status: "RESOLVED" as const, resolution: "Compliment, no action needed", resolvedAt: today() } : {}),
   });
   redirect("/report?sent=1");
 }

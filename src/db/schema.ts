@@ -38,8 +38,25 @@ export const users = pgTable("users", {
   role: roleEnum("role").notNull(),
   active: boolean("active").default(true).notNull(),
   driverId: text("driver_id").unique().references(() => drivers.id),
+  /** Set when a temporary password was issued; forces a new password at next sign-in. */
+  mustChangePassword: boolean("must_change_password").default(false).notNull(),
+  /** Receive reminder emails. */
+  notify: boolean("notify").default(true).notNull(),
+  lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
   createdAt: createdAt(),
 });
+
+/** Every email the system sends (or tries to send). */
+export const emailLog = pgTable("email_log", {
+  id: id(),
+  userId: text("user_id").references(() => users.id),
+  toEmail: text("to_email").notNull(),
+  kind: text("kind").notNull(), // welcome | reminder | test
+  subject: text("subject").notNull(),
+  status: text("status").notNull(), // sent | failed | skipped
+  error: text("error"),
+  createdAt: createdAt(),
+}, (t) => [index("email_log_created").on(t.createdAt)]);
 
 export const vehicles = pgTable("vehicles", {
   id: id(),
