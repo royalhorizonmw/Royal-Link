@@ -8,7 +8,8 @@ const pool =
   globalForDb.pool ??
   new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 10,
+    // Serverless (Vercel) runs many small instances, so keep each pool small.
+    max: process.env.VERCEL ? 3 : 10,
     ssl: process.env.DATABASE_SSL === "true" ? { rejectUnauthorized: false } : undefined,
   });
 if (process.env.NODE_ENV !== "production") globalForDb.pool = pool;

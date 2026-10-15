@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { decrypt, SESSION_COOKIE } from "@/lib/session";
 
-const PUBLIC_PATHS = ["/login", "/report"];
+const PUBLIC_PATHS = ["/login", "/report", "/setup"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

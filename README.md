@@ -66,11 +66,18 @@ Works on any Ubuntu VPS with 2 GB RAM (DigitalOcean, Hetzner, Contabo, Afrihost�
 ```
 Copy backups off the server too (e.g. to Google Drive with rclone).
 
-## Alternative: Vercel + managed Postgres
-1. Create a Postgres database on Neon or Supabase; copy its connection string.
-2. Import the repo into Vercel; set `DATABASE_URL`, `DATABASE_SSL=true`, `SESSION_SECRET`, `APP_URL`.
-3. Locally: `DATABASE_URL=... DATABASE_SSL=true npm run db:migrate` and `npm run create-manager` (with the ADMIN_* variables).
-4. In Vercel, add the domain `transport.royalhorizonmw.com` and follow its DNS instructions.
+## Deploy on Vercel + Neon (no server to manage)
+1. Sign in to **vercel.com** with GitHub → **Add New → Project** → import `royal-link-os`.
+2. Before deploying, open **Environment Variables** and add:
+   - `SESSION_SECRET` — 32+ random characters
+   - `SETUP_KEY` — a 12+ character key you keep private (used once to create the first manager)
+   - `APP_URL` — `https://transport.royalhorizonmw.com`
+3. Click **Deploy** (the first build may fail because there is no database yet — that's fine).
+4. In the project: **Storage → Create Database → Neon (Postgres)** → connect it to the project. This adds `DATABASE_URL` automatically.
+5. **Deployments → Redeploy.** Each build runs the database migrations first (`vercel-build` script).
+6. Open `https://<your-project>.vercel.app/setup`, enter the `SETUP_KEY` and create the manager account. The page locks itself once a user exists.
+7. **Settings → Domains** → add `transport.royalhorizonmw.com`. At the DNS provider for royalhorizonmw.com add a **CNAME** record: name `transport`, value `cname.vercel-dns.com`. HTTPS is automatic.
+8. Neon keeps point-in-time backups; also export a monthly copy (Neon console → Backup) for safety.
 
 ## Local development
 ```bash

@@ -11,7 +11,8 @@
     "db:migrate": "node scripts/migrate.mjs",
     "demo": "tsx scripts/demo.ts",
     "typecheck": "tsc --noEmit",
-    "create-manager": "node scripts/create-manager.mjs"
+    "create-manager": "node scripts/create-manager.mjs",
+    "vercel-build": "node scripts/migrate.mjs && next build"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
