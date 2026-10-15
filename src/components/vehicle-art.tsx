@@ -65,6 +65,31 @@ export function LorryArt({ status = "ACTIVE", className = "" }: { status?: strin
   );
 }
 
+/** Real cut-out photos of the fleet's models (Wikimedia Commons, credited in PHOTO_CREDITS). */
+export const VEHICLE_PHOTOS = {
+  minibus: { src: "/fleet-photos/toyota-hiace-h100.webp", alt: "Toyota HiAce minibus", w: 640, h: 352 },
+  lorry: { src: "/fleet-photos/fuso-canter.webp", alt: "Mitsubishi Fuso Canter lorry", w: 640, h: 416 },
+} as const;
+
+export const PHOTO_CREDITS = [
+  { what: "Toyota HiAce", by: "Ethan Llamas", licence: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:Toyota_Hiace_LH114L_FL1_2.4_Commuter_White_01.jpg" },
+  { what: "Fuso Canter", by: "MarcelX42", licence: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:Fuso_Canter_3C15D_IAA_2022_(DSC03808).jpg" },
+];
+
+/** Photo of the vehicle, styled by status: full colour on the road, washed out when parked. */
+export function VehiclePhoto({ type, status = "ACTIVE", className = "" }: { type: string; status?: string; className?: string }) {
+  const p = type === "LORRY" ? VEHICLE_PHOTOS.lorry : VEHICLE_PHOTOS.minibus;
+  const look = status === "PARKED" || status === "DISPOSED" ? "grayscale opacity-60" : status === "IN_GARAGE" ? "saturate-50 opacity-90" : "";
+  return (
+    <div className={`relative flex aspect-[16/10] items-end justify-center ${className}`}>
+      <span className="absolute bottom-[3%] left-[8%] right-[8%] h-[9%] rounded-[50%] bg-slate-900/15 blur-[3px]" aria-hidden="true" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={p.src} alt={p.alt} width={p.w} height={p.h} loading="lazy" decoding="async"
+        className={`relative max-h-full w-full object-contain object-bottom drop-shadow-sm transition ${look}`} />
+    </div>
+  );
+}
+
 /** Spanner badge drawn over a vehicle that is in the garage. */
 export function GarageBadge() {
   return (

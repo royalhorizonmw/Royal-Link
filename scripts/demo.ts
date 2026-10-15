@@ -36,7 +36,7 @@ async function main() {
     { code: "LRY-01", regNumber: "LL 2201", type: "LORRY", dailyTarget: 300000, capacityTons: 10, odometer: 186400, earningMode: "BOTH" },
     { code: "LRY-02", regNumber: "LL 2202", type: "LORRY", dailyTarget: 0, capacityTons: 7, odometer: 151200, earningMode: "PER_JOB" },
   ] as const;
-  const vs = await db.insert(s.vehicles).values(vdefs.map((v) => ({ ...v, make: v.type === "LORRY" ? "Isuzu" : "Toyota", model: v.type === "LORRY" ? "FVR" : "HiAce", year: 2016 }))).returning();
+  const vs = await db.insert(s.vehicles).values(vdefs.map((v) => ({ ...v, make: v.type === "LORRY" ? "Mitsubishi Fuso" : "Toyota", model: v.type === "LORRY" ? "Canter 2t" : "HiAce", year: 2004 }))).returning();
 
   const names = ["Chisomo Banda", "Mphatso Phiri", "Kondwani Mwale", "Yamikani Tembo", "Blessings Chirwa", "Limbani Nyirenda", "Madalitso Kumwenda", "Tiyamike Gondwe"];
   const ds = await db.insert(s.drivers).values(names.map((fullName, i) => ({

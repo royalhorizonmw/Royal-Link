@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GarageBadge, LorryArt, MinibusArt } from "./vehicle-art";
+import { GarageBadge, PHOTO_CREDITS, VehiclePhoto } from "./vehicle-art";
 import { daysBetween, fmtDate, today } from "@/lib/format";
 
 type V = {
@@ -18,14 +18,13 @@ const TODAY: Record<string, { text: string; cls: string }> = {
 };
 
 function Tile({ v }: { v: V }) {
-  const Art = v.type === "LORRY" ? LorryArt : MinibusArt;
   const t = v.today ? TODAY[v.today.status] : null;
   const garage = v.status === "IN_GARAGE";
   return (
     <Link href={`/vehicles/${v.id}`}
       className={`group flex flex-col gap-2 rounded-2xl border p-3 transition hover:border-brand-300 hover:shadow-sm ${garage ? "border-amber-200 bg-amber-50/60" : v.status === "PARKED" ? "border-line bg-slate-50" : "border-line bg-white"}`}>
-      <div className="relative mx-auto w-full max-w-[150px]">
-        <Art status={v.status} className="h-auto w-full transition group-hover:-translate-y-0.5" />
+      <div className="relative mx-auto w-full max-w-[190px]">
+        <VehiclePhoto type={v.type} status={v.status} className="transition group-hover:-translate-y-0.5" />
         {garage ? <GarageBadge /> : null}
       </div>
       <div className="flex items-baseline justify-between gap-2">
@@ -72,6 +71,11 @@ export function FleetBoard({ vehicles }: { vehicles: V[] }) {
           In the garage: {garage.map((g) => `${g.code}${g.garageJob ? ` (${g.garageJob.title}, since ${fmtDate(g.garageJob.since, { day: "numeric", month: "short" })})` : ""}`).join(" · ")}. Their daily targets are paused.
         </div>
       ) : null}
+      <div className="px-5 pb-3 text-[10px] text-muted">
+        Photos: {PHOTO_CREDITS.map((c, i) => (
+          <span key={c.url}>{i ? " · " : ""}<a href={c.url} target="_blank" rel="noreferrer" className="hover:underline">{c.what} by {c.by}</a> ({c.licence})</span>
+        ))}, Wikimedia Commons, background removed.
+      </div>
     </section>
   );
 }

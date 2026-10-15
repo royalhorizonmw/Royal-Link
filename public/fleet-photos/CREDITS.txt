@@ -1,0 +1,13 @@
+Vehicle photos used on the Royal Link dashboard (background removed, resized):
+
+toyota-hiace-h100.webp
+  "Toyota Hiace LH114L FL1 2.4 Commuter White 01" by Ethan Llamas
+  https://commons.wikimedia.org/wiki/File:Toyota_Hiace_LH114L_FL1_2.4_Commuter_White_01.jpg
+  Licence: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)
+
+fuso-canter.webp
+  "Fuso Canter 3C15D IAA 2022 (DSC03808)" by MarcelX42
+  https://commons.wikimedia.org/wiki/File:Fuso_Canter_3C15D_IAA_2022_(DSC03808).jpg
+  Licence: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)
+
+These edited cut-outs are shared under the same CC BY-SA 4.0 licence.
