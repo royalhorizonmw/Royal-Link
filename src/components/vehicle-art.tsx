@@ -67,12 +67,12 @@ export function LorryArt({ status = "ACTIVE", className = "" }: { status?: strin
 
 /** Real cut-out photos of the fleet's models (Wikimedia Commons, credited in PHOTO_CREDITS). */
 export const VEHICLE_PHOTOS = {
-  minibus: { src: "/fleet-photos/toyota-hiace-h100.webp", alt: "Toyota HiAce minibus", w: 640, h: 352 },
+  minibus: { src: "/fleet-photos/toyota-hiace-h100.webp", alt: "Toyota HiAce minibus", w: 640, h: 321 },
   lorry: { src: "/fleet-photos/fuso-canter.webp", alt: "Mitsubishi Fuso Canter lorry", w: 640, h: 416 },
 } as const;
 
 export const PHOTO_CREDITS = [
-  { what: "Toyota HiAce", by: "Ethan Llamas", licence: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:Toyota_Hiace_LH114L_FL1_2.4_Commuter_White_01.jpg" },
+  { what: "Toyota HiAce", by: "OSX", licence: "public domain", url: "https://commons.wikimedia.org/wiki/File:1998-2004_Toyota_HiAce_(RZH103R)_van_(2011-11-04).jpg" },
   { what: "Fuso Canter", by: "MarcelX42", licence: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:Fuso_Canter_3C15D_IAA_2022_(DSC03808).jpg" },
 ];
 

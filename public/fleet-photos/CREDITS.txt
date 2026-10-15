@@ -1,9 +1,9 @@
 Vehicle photos used on the Royal Link dashboard (background removed, resized):
 
 toyota-hiace-h100.webp
-  "Toyota Hiace LH114L FL1 2.4 Commuter White 01" by Ethan Llamas
-  https://commons.wikimedia.org/wiki/File:Toyota_Hiace_LH114L_FL1_2.4_Commuter_White_01.jpg
-  Licence: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)
+  "1998-2004 Toyota HiAce (RZH103R) van (2011-11-04)" by OSX
+  https://commons.wikimedia.org/wiki/File:1998-2004_Toyota_HiAce_(RZH103R)_van_(2011-11-04).jpg
+  Licence: public domain. Edited: background removed, side windows added, number plate blanked.
 
 fuso-canter.webp
   "Fuso Canter 3C15D IAA 2022 (DSC03808)" by MarcelX42
