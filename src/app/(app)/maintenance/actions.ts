@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { serviceSchedules, workOrders, vehicles, expenses } from "@/db/schema";
 import { requireRole, logActivity } from "@/lib/auth";
-import { str, toInt, today } from "@/lib/format";
+import { daysBetween, str, toInt, today } from "@/lib/format";
 
 function done() {
   revalidatePath("/maintenance");
@@ -28,12 +28,29 @@ export async function createSchedule(fd: FormData) {
   done();
 }
 
+/** Plan a one-time job, such as a full service, for a chosen date. */
+export async function planService(fd: FormData) {
+  const user = await requireRole("OPERATIONS");
+  const vehicleId = str(fd.get("vehicleId"));
+  const title = str(fd.get("title")) ?? "Full service";
+  const due = str(fd.get("dueDate"));
+  if (!vehicleId || !due || due < today()) redirect("/maintenance?error=plan");
+  const v = await db.query.vehicles.findFirst({ where: eq(vehicles.id, vehicleId) });
+  // Stored as "done today, due again in N days" so the normal due-date logic and reminders apply.
+  await db.insert(serviceSchedules).values({
+    vehicleId, title, intervalDays: Math.max(0, daysBetween(today(), due)), lastDoneKm: v?.odometer ?? 0, lastDoneDate: today(), oneOff: true,
+  });
+  await logActivity(user.id, "service.plan", `${v?.code} ${title} ${due}`);
+  done();
+}
+
 export async function markScheduleDone(id: string) {
   const user = await requireRole("OPERATIONS");
   const s = await db.query.serviceSchedules.findFirst({ where: eq(serviceSchedules.id, id) });
   if (!s) return;
   const v = await db.query.vehicles.findFirst({ where: eq(vehicles.id, s.vehicleId) });
-  await db.update(serviceSchedules).set({ lastDoneKm: v?.odometer ?? s.lastDoneKm, lastDoneDate: today() }).where(eq(serviceSchedules.id, id));
+  // A planned one-off (e.g. full service) is finished once done; a recurring one restarts its clock.
+  await db.update(serviceSchedules).set({ lastDoneKm: v?.odometer ?? s.lastDoneKm, lastDoneDate: today(), active: !s.oneOff }).where(eq(serviceSchedules.id, id));
   await db.insert(workOrders).values({ vehicleId: s.vehicleId, title: s.title, status: "DONE", openedAt: today(), closedAt: today(), odometer: v?.odometer, scheduleId: id });
   await logActivity(user.id, "service.done", `${v?.code} ${s.title}`);
   done();

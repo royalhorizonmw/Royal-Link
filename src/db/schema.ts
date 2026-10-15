@@ -180,6 +180,8 @@ export const serviceSchedules = pgTable("service_schedules", {
   lastDoneKm: integer("last_done_km"),
   lastDoneDate: date("last_done_date"),
   active: boolean("active").default(true).notNull(),
+  /** A planned one-time job (e.g. a full service on a chosen date); switches itself off once done. */
+  oneOff: boolean("one_off").default(false).notNull(),
 });
 
 export const workOrders = pgTable("work_orders", {

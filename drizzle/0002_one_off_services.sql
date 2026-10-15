@@ -1,0 +1,1 @@
+ALTER TABLE "service_schedules" ADD COLUMN "one_off" boolean DEFAULT false NOT NULL;

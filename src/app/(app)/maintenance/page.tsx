@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/auth";
 import { scheduleStatus } from "@/lib/calc";
 import { daysBetween, fmtDate, label, today } from "@/lib/format";
 import { AddPanel, Badge, Card, Empty, Field, Notice, PageHeader, Stat, TableWrap, statusTone } from "@/components/ui";
-import { closeWorkOrder, createSchedule, createWorkOrder, deleteSchedule, markScheduleDone, startWorkOrder } from "./actions";
+import { closeWorkOrder, createSchedule, createWorkOrder, deleteSchedule, markScheduleDone, planService, startWorkOrder } from "./actions";
 
 export const metadata = { title: "Maintenance" };
 
@@ -30,7 +30,7 @@ export default async function MaintenancePage({ searchParams }: { searchParams: 
   return (
     <>
       <PageHeader title="Maintenance" subtitle="Service schedules by km or date, and garage work orders" />
-      {sp.error ? <Notice tone="bad">Choose a vehicle and give a title.</Notice> : null}
+      {sp.error === "plan" ? <Notice tone="bad">Choose a vehicle and a date from today onwards.</Notice> : sp.error ? <Notice tone="bad">Choose a vehicle and give a title.</Notice> : null}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Available today" value={`${available} of ${active.length}`} tone="good" note={active.length ? `${Math.round((available / active.length) * 100)}% fleet availability` : undefined} />
         <Stat label="In the garage" value={String(active.filter((v) => v.status === "IN_GARAGE").length)} tone="warn" />
@@ -61,6 +61,17 @@ export default async function MaintenancePage({ searchParams }: { searchParams: 
           </form>
         </AddPanel>
       </div>
+
+      <AddPanel title="Plan a full service (or any one-off job)">
+        <form action={planService} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Field label="Vehicle"><select className="input" name="vehicleId" required>{active.map((v) => <option key={v.id} value={v.id}>{v.code} · {v.regNumber}</option>)}</select></Field>
+          <Field label="Job"><input className="input" name="title" defaultValue="Full service" required /></Field>
+          <Field label="Planned for"><input className="input" type="date" name="dueDate" min={today()} required /></Field>
+          <div className="flex items-end"><button className="btn btn-primary w-full">Plan it</button></div>
+        </form>
+        <p className="mt-3 text-[12px] text-muted">It shows as due soon in the week before, appears in reminders, and drops off the list once you mark it done.</p>
+      </AddPanel>
+      <Notice tone="info">Standard plan: <b>buses</b> get brake pads every 3 weeks and an oil change every month, set up automatically. <b>Lorries</b>: oil every 5,000 km or 90 days. Full services are planned when needed (above).</Notice>
 
       <Card title="Open work orders" pad={false}>
         {open.length === 0 ? <Empty title="Nothing in the garage" /> : (
@@ -96,8 +107,8 @@ export default async function MaintenancePage({ searchParams }: { searchParams: 
             <tbody>{rows.map(({ s, v, st }) => (
               <tr key={s.id}>
                 <td><Link href={`/vehicles/${v.id}`} className="font-bold text-brand-700">{v.code}</Link></td>
-                <td>{s.title}</td>
-                <td className="text-muted">{[s.intervalKm ? `${s.intervalKm.toLocaleString()} km` : null, s.intervalDays ? `${s.intervalDays} days` : null].filter(Boolean).join(" / ")}</td>
+                <td>{s.title}{s.oneOff ? <span className="ml-2"><Badge tone="info">Planned once</Badge></span> : null}</td>
+                <td className="text-muted">{s.oneOff ? "One-off" : [s.intervalKm ? `${s.intervalKm.toLocaleString()} km` : null, s.intervalDays ? (s.intervalDays === 21 ? "3 weeks" : s.intervalDays === 30 ? "Monthly" : `${s.intervalDays} days`) : null].filter(Boolean).join(" / ")}</td>
                 <td>{s.lastDoneKm != null ? `${s.lastDoneKm.toLocaleString()} km` : ""} {s.lastDoneDate ? `· ${fmtDate(s.lastDoneDate)}` : ""}</td>
                 <td>{st.dueKm != null ? `${st.dueKm.toLocaleString()} km` : ""}{st.dueKm != null && st.dueDate ? " / " : ""}{st.dueDate ? fmtDate(st.dueDate) : ""}</td>
                 <td className="num">{[st.kmLeft != null ? `${st.kmLeft.toLocaleString()} km` : null, st.daysLeft != null ? `${st.daysLeft} d` : null].filter(Boolean).join(" · ")}</td>

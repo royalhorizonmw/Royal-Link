@@ -36,10 +36,15 @@ export async function createVehicle(fd: FormData) {
   const v = readVehicle(fd);
   if (!v.code || !v.regNumber) redirect("/vehicles?error=missing");
   const [row] = await db.insert(vehicles).values(v).returning();
-  // Default service plan so maintenance alerts work from day one.
-  await db.insert(serviceSchedules).values([
+  // Standard maintenance plan so alerts work from day one.
+  // Buses: brake pads every 3 weeks, oil monthly. Lorries: oil every 5,000 km or 90 days.
+  // Full services are not automatic; they are planned as one-off jobs on the Maintenance page.
+  const isBus = v.type !== "LORRY";
+  await db.insert(serviceSchedules).values(isBus ? [
+    { vehicleId: row.id, title: "Brake pads", intervalDays: 21, lastDoneKm: v.odometer, lastDoneDate: today() },
+    { vehicleId: row.id, title: "Oil & filter change", intervalDays: 30, lastDoneKm: v.odometer, lastDoneDate: today() },
+  ] : [
     { vehicleId: row.id, title: "Oil & filter change", intervalKm: 5000, intervalDays: 90, lastDoneKm: v.odometer, lastDoneDate: today() },
-    { vehicleId: row.id, title: "Full service", intervalKm: 20000, intervalDays: 365, lastDoneKm: v.odometer, lastDoneDate: today() },
   ]);
   await logActivity(user.id, "vehicle.create", v.code);
   revalidatePath("/vehicles");
